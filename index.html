@@ -27,7 +27,7 @@
                 margin: 0 auto !important;
                 padding: 0 !important;
                 box-shadow: none;
-                page-break-after: always;
+                page-break-after: always; /* Pastikan setiap #print-area memulai halaman baru */
             }
             .exam-card {
                 page-break-inside: avoid;
@@ -168,9 +168,11 @@
                     </svg>
                     <span id="load-text">Muat Data Siswa</span>
                 </button>
-                <!-- Tombol Cetak Baru -->
                 <button id="print-button" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">
                     Cetak Halaman Ini
+                </button>
+                <button id="print-all-button" class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
+                    Cetak Semua Halaman
                 </button>
             </div>
              <div id="pagination-controls" class="mt-6 text-center no-print hidden">
@@ -198,6 +200,7 @@
         const loadText = document.getElementById('load-text');
         const printContainer = document.getElementById('print-container');
         const printButton = document.getElementById('print-button');
+        const printAllButton = document.getElementById('print-all-button'); // Tombol baru
         
         // Input fields
         const foundationNameInput = document.getElementById('foundation-name');
@@ -272,7 +275,7 @@
             }
         });
         
-        // Event listener untuk Tombol Cetak Baru
+        // Event listener untuk Tombol Cetak Halaman Ini
         printButton.addEventListener('click', () => {
             if (allStudents.length === 0) {
                 alert("Silakan muat data siswa terlebih dahulu.");
@@ -302,6 +305,54 @@
             `);
             newWin.document.close();
         });
+
+        // Event listener untuk Tombol Cetak Semua Halaman
+        printAllButton.addEventListener('click', () => {
+            if (allStudents.length === 0) {
+                alert("Silakan muat data siswa terlebih dahulu.");
+                return;
+            }
+
+            const styles = document.querySelector('style').innerHTML;
+            let allPagesHtml = '';
+
+            for (let i = 0; i < totalPages; i++) {
+                const startIndex = i * studentsPerPage;
+                const endIndex = startIndex + studentsPerPage;
+                const studentsOnPage = allStudents.slice(startIndex, endIndex);
+
+                let pageHtml = '<div id="print-area">';
+                studentsOnPage.forEach(student => {
+                    pageHtml += createCard(student);
+                });
+
+                const emptySlots = studentsPerPage - studentsOnPage.length;
+                for (let j = 0; j < emptySlots; j++) {
+                    pageHtml += `<div class="exam-card"></div>`;
+                }
+                pageHtml += '</div>';
+                allPagesHtml += pageHtml;
+            }
+
+            const newWin = window.open('', '_blank');
+            newWin.document.write(`
+                <html>
+                    <head>
+                        <title>Cetak Semua Kartu Ujian</title>
+                        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+                        <script src="https://cdn.tailwindcss.com"><\/script>
+                        <style>
+                            ${styles}
+                        </style>
+                    </head>
+                    <body onload="window.print(); window.close();">
+                        ${allPagesHtml}
+                    </body>
+                </html>
+            `);
+            newWin.document.close();
+        });
+
 
         // Event listener untuk fitur Gemini API
         generateMessageButton.addEventListener('click', async () => {
